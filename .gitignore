@@ -1,0 +1,26 @@
+## Java
+*.class
+*.ear
+*.jar
+*.war
+
+## JetBrains
+.idea/
+.idea_modules/
+out/
+*.iml
+*.ipr
+*.iws
+
+## Maven
+target/
+dependency-reduced-pom.xml
+
+## Windows
+$RECYCLE_BIN/
+Desktop.ini
+ehthumbs.db
+Thumbs.db
+
+## KDiff3
+*.orig

@@ -1,0 +1,13 @@
+name: ${project.name}
+version: ${project.version}-${env.BUILD_NUMBER}
+description: ${project.description}
+author: ${pluginyml.author}
+main: ${bukkit.pluginyml.main}
+load: STARTUP
+depend: [ProtocolLib]
+loadbefore: [BungeeGuard]
+api-version: 1.13
+
+commands:
+  fakemessagefixreload:
+    permission: fakemessagefix.reload

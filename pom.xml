@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.janmm14</groupId>
+    <artifactId>fakemessagefix</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <name>FakeMessageFix</name>
+    <description>Hides fake console messages produced by certain users logging in</description>
+
+    <inceptionYear>2021</inceptionYear>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <pluginyml.author>Janmm14</pluginyml.author>
+        <bukkit.pluginyml.main>${project.groupId}.${project.artifactId}.${project.name}</bukkit.pluginyml.main>
+        <jarsigner.skip>true</jarsigner.skip>
+    </properties>
+
+    <developers>
+        <developer>
+            <id>janmm14</id>
+            <name>Janmm14</name>
+            <roles>
+                <role>developer</role>
+                <role>administrator</role>
+            </roles>
+            <email>fakemessagefix_pom@janmm14.de</email>
+            <timezone>1</timezone>
+            <url>https://github.com/Janmm14</url>
+        </developer>
+    </developers>
+
+    <contributors>
+        <contributor>
+            <name>Janmm14</name>
+            <roles>
+                <role>developer</role>
+                <role>administrator</role>
+            </roles>
+            <email>fakemessagefix_pom@janmm14.de</email>
+            <timezone>1</timezone>
+            <url>https://github.com/Janmm14</url>
+        </contributor>
+    </contributors>
+
+    <repositories>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>sonatype-oss-repo</id>
+            <url>https://oss.sonatype.org/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>dmulloy2-repo</id>
+            <url>https://repo.dmulloy2.net/repository/public/</url>
+        </repository>
+    </repositories>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
+            <version>1.8.8-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.20</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.comphenix.protocol</groupId>
+            <artifactId>ProtocolLib</artifactId>
+            <version>4.6.0</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <defaultGoal>clean package</defaultGoal>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                        <manifestSections>
+                            <manifestSection>
+                                <name>de/janmm14/fakemessagefix/</name>
+                                <manifestEntries>
+                                    <Sealed>true</Sealed>
+                                </manifestEntries>
+                            </manifestSection>
+                        </manifestSections>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jarsigner-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>sign</id>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keystore>/var/lib/jenkins/keystore.pkcs12</keystore>
+                    <storetype>pkcs12</storetype>
+                    <sigfile>JANMM14_CERT</sigfile>
+                    <alias>signcert</alias>
+                    <storepass>{CqClXKh2pTIHVtWpasjJlGzeHxBJOqNEC76IVqqwQ497v7Fq62C9LTPrKCPijdV2Guir9r4thB65QsBvU3Iqu2SB8CfJEwxoSy7kQraXOxVeKQAbPNGlub9iCtFqTAhS4xUWKdRkzL/BzU0KrgDxVw==}</storepass>
+                    <keypass>{CqClXKh2pTIHVtWpasjJlGzeHxBJOqNEC76IVqqwQ497v7Fq62C9LTPrKCPijdV2Guir9r4thB65QsBvU3Iqu2SB8CfJEwxoSy7kQraXOxVeKQAbPNGlub9iCtFqTAhS4xUWKdRkzL/BzU0KrgDxVw==}</keypass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
