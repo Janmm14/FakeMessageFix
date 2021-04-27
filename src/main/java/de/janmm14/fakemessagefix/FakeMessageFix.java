@@ -32,8 +32,8 @@ public final class FakeMessageFix extends JavaPlugin {
     @Override
     public void onEnable() {
         getConfig().options().copyDefaults(true);
-        getConfig().addDefault("log", log);
-        getConfig().addDefault("logDetailed", logDetailed);
+        getConfig().addDefault("log", false);
+        getConfig().addDefault("logDetailed", false);
         saveConfig();
         log = getConfig().getBoolean("log");
         logDetailed = getConfig().getBoolean("logDetailed");
@@ -83,6 +83,9 @@ public final class FakeMessageFix extends JavaPlugin {
             return true;
         }
         reloadConfig();
+        getConfig().options().copyDefaults(true);
+        getConfig().addDefault("log", false);
+        getConfig().addDefault("logDetailed", false);
         log = getConfig().getBoolean("log");
         logDetailed = getConfig().getBoolean("logDetailed");
         getLogger().info("FakeMessageFix reloaded. Logging status: " + (log ? (logDetailed ? "detailed" : "enabled") : "disabled"));
