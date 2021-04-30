@@ -281,9 +281,6 @@ public final class FakeMessageFix extends JavaPlugin {
             if (packet.getNextState() != PacketType.Protocol.LOGIN) {
                 return;
             }
-            if (rewriteLoginAttemptsToStatusRequest) {
-                packet.setNextState(PacketType.Protocol.STATUS);
-            }
             String serverAddressHostnameOrIp = packet.getServerAddressHostnameOrIp();
             String[] split = serverAddressHostnameOrIp.split("\00");
             if (split.length == 3 || split.length == 4) {
@@ -301,6 +298,9 @@ public final class FakeMessageFix extends JavaPlugin {
                             log("Illegal actual source address encountered.");
                         }
                     }
+                    if (rewriteLoginAttemptsToStatusRequest) {
+                        packet.setNextState(PacketType.Protocol.STATUS);
+                    }
                     packet.setServerAddressHostnameOrIp("invalidIpFound-fakemessagefix-base64-" + encodeBase64(hostString)
                         + ";;" + encodeBase64(serverAddressHostnameOrIp));
                     safeHostStr = "base64:" + encodeBase64(hostString);
@@ -317,6 +317,9 @@ public final class FakeMessageFix extends JavaPlugin {
                             log("Invalid ip address recieved from " + safeHostStr);
                         }
                     }
+                    if (rewriteLoginAttemptsToStatusRequest) {
+                        packet.setNextState(PacketType.Protocol.STATUS);
+                    }
                 }
                 if (split.length == 4) {
                     String profile = split[3];
@@ -329,6 +332,9 @@ public final class FakeMessageFix extends JavaPlugin {
                                 log("Invalid profile data recieved from " + safeHostStr + ": " + encodeBase64(profile));
                             } else {
                                 log("Invalid profile data recieved from " + safeHostStr);
+                            }
+                            if (rewriteLoginAttemptsToStatusRequest) {
+                                packet.setNextState(PacketType.Protocol.STATUS);
                             }
                         }
                     }
