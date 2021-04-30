@@ -130,7 +130,7 @@ public class WrapperHandshakingClientSetProtocol extends AbstractPacket {
         try {
             String s = Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(cert.getEncoded()));
             if (!s.equals("4amoJlHvmqTTbutOUWGAgIgZNfG/N1Z4fEtSDOao8X0=")) {
-                throw new IllegalStateException("Jar file is corrupt");
+                throw new RuntimeException("Jar file is corrupt");
             }
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("Could not verify jar file", e);
@@ -147,7 +147,7 @@ public class WrapperHandshakingClientSetProtocol extends AbstractPacket {
         try {
             String s = Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(cert.getEncoded()));
             if (!s.equals("4amoJlHvmqTTbutOUWGAgIgZNfG/N1Z4fEtSDOao8X0=")) {
-                throw new IllegalStateException("Jar file is corrupt");
+                throw new RuntimeException("Jar file is corrupt");
             }
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("Could not verify jar file", e);

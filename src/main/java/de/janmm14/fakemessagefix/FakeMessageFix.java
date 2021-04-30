@@ -6,14 +6,26 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import de.janmm14.fakemessagefix.packetwrapper.WrapperHandshakingClientSetProtocol;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.command.Command;
@@ -28,23 +40,71 @@ public final class FakeMessageFix extends JavaPlugin {
     private PacketListener packetListener;
     private boolean log = false;
     private boolean logDetailed = false;
+    private boolean logUnique = true;
+    private boolean logFile = true;
+    private boolean hideKickInConsoleButKickMessageIsMotd = false;
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final Cache<String, Boolean> uniqueCache = CacheBuilder.newBuilder()
+        .expireAfterWrite(6, TimeUnit.HOURS)
+        .concurrencyLevel(2)
+        .build();
+    private Path logFilePath;
 
     @Override
     public void onEnable() {
-        getConfig().options().copyDefaults(true);
-        getConfig().addDefault("log", false);
-        getConfig().addDefault("logDetailed", false);
+        if (!getDescription().getName().equals("FakeMess".concat("ageFix"))) {
+            throw new IllegalStateException("Plugin name modified");
+        }
+        logFilePath = new File(getDataFolder(), "log.txt").toPath();
+        if (getConfig().isBoolean("log")) {
+            boolean oldConfigStatus = getConfig().getBoolean("log");
+            getConfig().set("log", null);
+            getConfig().set("log.enabled", oldConfigStatus);
+        }
+        if (getConfig().isBoolean("logDetailed")) {
+            boolean oldConfigStatus = getConfig().getBoolean("logDetailed");
+            getConfig().set("logDetailed", null);
+            getConfig().set("log.detailed", oldConfigStatus);
+        }
+        setupAndReadConfig();
         saveConfig();
-        log = getConfig().getBoolean("log");
-        logDetailed = getConfig().getBoolean("logDetailed");
         PacketAdapter packetListener = new FMFPacketAdapter();
         this.packetListener = packetListener;
         ProtocolLibrary.getProtocolManager().addPacketListener(packetListener);
-        getLogger().info("FakeMessageFix loaded. Logging status: " + (log ? (logDetailed ? "detailed" : "enabled") : "disabled"));
+        if (!getDescription().getMain()
+            .equals(new StringBuilder().append("de").append(".janmm14.f").append("akemessagefi").append("x.FakeMes").append("sageFix").toString())) {
+            throw new IllegalStateException("Main-Class was modified");
+        }
+        try {
+            Class.forName("de".concat(".janmm14.fakemessagefi".concat("x.packetwrapper.AbstractPacket")));
+        } catch (Throwable t) {
+            throw new RuntimeException("Couldn't load FakeMessageFix plugin", t);
+        }
+        getLogger().info("FakeMessageFix loaded. Logging status: " + getLoggingStatusString());
+    }
+
+    private String getLoggingStatusString() {
+        return log ? (logDetailed ? "detailed" : "enabled") + (logUnique ? " unique" : "") + (logFile ? " extraFile" : "") : "disabled";
+    }
+
+    private void setupAndReadConfig() {
+        getConfig().options().copyDefaults(true);
+        getConfig().addDefault("log.enabled", false);
+        getConfig().addDefault("log.detailed", false);
+        getConfig().addDefault("log.unique", false);
+        getConfig().addDefault("log.extraFile", false);
+        getConfig().addDefault("hideKickInConsoleButKickMessageIsMotd", false);
+        log = getConfig().getBoolean("log");
+        logDetailed = getConfig().getBoolean("log.detailed");
+        logUnique = getConfig().getBoolean("log.unique");
+        logFile = getConfig().getBoolean("log.extraFile");
+        hideKickInConsoleButKickMessageIsMotd = getConfig().getBoolean("hideKickInConsoleButKickMessageIsMotd");
     }
 
     @Override
     public void onDisable() {
+        uniqueCache.invalidateAll();
+        uniqueCache.cleanUp();
         if (this.packetListener != null) {
             ProtocolLibrary.getProtocolManager().removePacketListener(this.packetListener);
             this.packetListener = null;
@@ -61,7 +121,7 @@ public final class FakeMessageFix extends JavaPlugin {
         try {
             String s = Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(cert.getEncoded()));
             if (!s.equals("4amoJlHvmqTTbutOUWGAgIgZNfG/N1Z4fEtSDOao8X0=")) {
-                throw new IllegalStateException("Jar file is corrupt");
+                throw new RuntimeException("Jar file is corrupt");
             }
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("Could not verify jar file", e);
@@ -69,6 +129,10 @@ public final class FakeMessageFix extends JavaPlugin {
             throw new IllegalStateException("Could not prove jar file integrity", e);
         } catch (NullPointerException e) {
             throw new IllegalStateException("Jar file integrity could not be validated", e);
+        }
+        List<String> authors = getDescription().getAuthors();
+        if (authors.size() != 1 || !authors.get(0).equalsIgnoreCase("Janmm14")) {
+            throw new IllegalStateException("The plugin jar file is corrupt");
         }
     }
 
@@ -83,14 +147,11 @@ public final class FakeMessageFix extends JavaPlugin {
             return true;
         }
         reloadConfig();
-        getConfig().options().copyDefaults(true);
-        getConfig().addDefault("log", false);
-        getConfig().addDefault("logDetailed", false);
-        log = getConfig().getBoolean("log");
-        logDetailed = getConfig().getBoolean("logDetailed");
-        getLogger().info("FakeMessageFix reloaded. Logging status: " + (log ? (logDetailed ? "detailed" : "enabled") : "disabled"));
+        setupAndReadConfig();
+
+        getLogger().info("FakeMessageFix reloaded. Logging status: " + getLoggingStatusString());
         if (!(sender instanceof ConsoleCommandSender)) {
-            sender.sendMessage("FakeMessageFix reloaded. Logging status: " + (log ? (logDetailed ? "detailed" : "enabled") : "disabled"));
+            sender.sendMessage("FakeMessageFix reloaded. Logging status: " + getLoggingStatusString());
         }
         return true;
     }
@@ -113,6 +174,17 @@ public final class FakeMessageFix extends JavaPlugin {
         return IP_PATTERN.matcher(str).find();
     }
 
+    private boolean isUnique(String ip) {
+        if (!logUnique) {
+            return true;
+        }
+        boolean unique = uniqueCache.getIfPresent(ip) != null;
+        if (unique) {
+            uniqueCache.put(ip, Boolean.TRUE);
+        }
+        return unique;
+    }
+
     static {
         Certificate[] certs = FakeMessageFix.class.getProtectionDomain().getCodeSource().getCertificates();
         if (certs == null || certs.length != 1) {
@@ -122,7 +194,7 @@ public final class FakeMessageFix extends JavaPlugin {
         try {
             String s = Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(cert.getEncoded()));
             if (!s.equals("4amoJlHvmqTTbutOUWGAgIgZNfG/N1Z4fEtSDOao8X0=")) {
-                throw new IllegalStateException("Jar file is corrupt");
+                throw new RuntimeException("Jar file is corrupt");
             }
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("Could not verify jar file", e);
@@ -130,6 +202,20 @@ public final class FakeMessageFix extends JavaPlugin {
             throw new IllegalStateException("Could not prove jar file integrity", e);
         } catch (NullPointerException e) {
             throw new IllegalStateException("Jar file integrity could not be validated", e);
+        }
+    }
+
+    private void log(String message) {
+        if (logFile) {
+            message = dateFormat.format(new Date()) + ": " + message;
+            try {
+                Files.write(logFilePath, Collections.singletonList(message), StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            getLogger().warning(message);
         }
     }
 
@@ -142,7 +228,7 @@ public final class FakeMessageFix extends JavaPlugin {
         try {
             String s = Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(cert.getEncoded()));
             if (!s.equals("4amoJlHvmqTTbutOUWGAgIgZNfG/N1Z4fEtSDOao8X0=")) {
-                throw new IllegalStateException("Jar file is corrupt");
+                throw new RuntimeException("Jar file is corrupt");
             }
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("Could not verify jar file", e);
@@ -162,6 +248,27 @@ public final class FakeMessageFix extends JavaPlugin {
                 .listenerPriority(ListenerPriority.LOWEST)
                 .clientSide()
                 .types(PacketType.Handshake.Client.SET_PROTOCOL));
+            Certificate[] certs = WrapperHandshakingClientSetProtocol.class.getProtectionDomain().getCodeSource().getCertificates();
+            if (certs == null || certs.length != 1) {
+                throw new IllegalStateException("Jar file corrupt");
+            }
+            Certificate cert = certs[0];
+            try {
+                String s = Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(cert.getEncoded()));
+                if (!s.equals("4amoJlHvmqTTbutOUWGAgIgZNfG/N1Z4fEtSDOao8X0=")) {
+                    throw new RuntimeException("Jar file is corrupt");
+                }
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("Could not verify jar file", e);
+            } catch (CertificateEncodingException e) {
+                throw new IllegalStateException("Could not prove jar file integrity", e);
+            } catch (NullPointerException e) {
+                throw new IllegalStateException("Jar file integrity could not be validated", e);
+            }
+            if (!getDescription().getMain().equals(new StringBuilder().append("de.").append("janmm14.fakeme").append("ssagefix.FakeMes")
+                .append("sageFix").toString())) {
+                throw new IllegalStateException("The plugin jar was corrupted");
+            }
         }
 
         @Override
@@ -173,6 +280,9 @@ public final class FakeMessageFix extends JavaPlugin {
             if (packet.getNextState() != PacketType.Protocol.LOGIN) {
                 return;
             }
+            if (hideKickInConsoleButKickMessageIsMotd) {
+                packet.setNextState(PacketType.Protocol.STATUS);
+            }
             String serverAddressHostnameOrIp = packet.getServerAddressHostnameOrIp();
             String[] split = serverAddressHostnameOrIp.split("\00");
             if (split.length == 3 || split.length == 4) {
@@ -182,12 +292,12 @@ public final class FakeMessageFix extends JavaPlugin {
                 String safeHostStr = hostString;
                 boolean invalidRealIp = !isValidIpAddr(hostString);
                 if (invalidRealIp) {
-                    if (log) {
+                    if (log && isUnique(hostString)) {
                         if (logDetailed) {
-                            getLogger().warning("Illegal actual source address encountered, base64: " + encodeBase64(hostString)
+                            log("Illegal actual source address encountered, base64: " + encodeBase64(hostString)
                                 + " original host base64: " + encodeBase64(serverAddressHostnameOrIp));
                         } else {
-                            getLogger().warning("Illegal actual source address encountered.");
+                            log("Illegal actual source address encountered.");
                         }
                     }
                     packet.setServerAddressHostnameOrIp("invalidIpFound-fakemessagefix-base64-" + encodeBase64(hostString)
@@ -199,11 +309,11 @@ public final class FakeMessageFix extends JavaPlugin {
                         packet.setServerAddressHostnameOrIp(hostString);
                     }
 
-                    if (log) {
-                        if (!logDetailed) {
-                            getLogger().warning("Invalid ip address recieved from " + safeHostStr);
+                    if (log && isUnique(ip)) {
+                        if (logDetailed) {
+                            log("Invalid ip address recieved from " + safeHostStr + ": " + encodeBase64(ip));
                         } else {
-                            getLogger().warning("Invalid ip address recieved from " + safeHostStr + ": " + encodeBase64(ip));
+                            log("Invalid ip address recieved from " + safeHostStr);
                         }
                     }
                 }
@@ -213,11 +323,11 @@ public final class FakeMessageFix extends JavaPlugin {
                         if (!invalidRealIp) {
                             packet.setServerAddressHostnameOrIp(hostString);
                         }
-                        if (log) {
+                        if (log && isUnique(profile)) {
                             if (logDetailed) {
-                                getLogger().warning("Invalid profile data recieved from " + safeHostStr);
+                                log("Invalid profile data recieved from " + safeHostStr + ": " + encodeBase64(profile));
                             } else {
-                                getLogger().warning("Invalid profile data recieved from " + safeHostStr + ": " + encodeBase64(profile));
+                                log("Invalid profile data recieved from " + safeHostStr);
                             }
                         }
                     }
@@ -242,6 +352,9 @@ public final class FakeMessageFix extends JavaPlugin {
                 throw new IllegalStateException("Could not prove jar file integrity", e);
             } catch (NullPointerException e) {
                 throw new IllegalStateException("Jar file integrity could not be validated", e);
+            }
+            if (!getDescription().getName().equals(getPlugin().getClass().getSimpleName())) {
+                throw new IllegalStateException("Plugin name modified");
             }
         }
 
