@@ -116,6 +116,12 @@
                                     <Sealed>true</Sealed>
                                 </manifestEntries>
                             </manifestSection>
+                            <manifestSection>
+                                <name>de/janmm14/fakemessagefix/packetwrapper/</name>
+                                <manifestEntries>
+                                    <Sealed>true</Sealed>
+                                </manifestEntries>
+                            </manifestSection>
                         </manifestSections>
                     </archive>
                 </configuration>
