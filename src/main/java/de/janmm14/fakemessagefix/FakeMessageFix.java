@@ -80,11 +80,12 @@ public final class FakeMessageFix extends JavaPlugin {
         } catch (Throwable t) {
             throw new RuntimeException("Couldn't load FakeMessageFix plugin", t);
         }
-        getLogger().info("FakeMessageFix loaded. Logging status: " + getLoggingStatusString());
+        getLogger().info("FakeMessageFix loaded. " + getLoggingStatusString());
     }
 
     private String getLoggingStatusString() {
-        return log ? (logDetailed ? "detailed" : "enabled") + (logUnique ? " unique" : "") + (logFile ? " extraFile" : "") : "disabled";
+        return "Logging status: " + (log ? (logDetailed ? "detailed" : "enabled") + (logUnique ? " unique" : "") + (logFile ? " extraFile" : "") : "disabled")
+            + (rewriteLoginAttemptsToStatusRequest ? " kick-hidden-in-console" : "");
     }
 
     private void setupAndReadConfig() {
@@ -149,9 +150,9 @@ public final class FakeMessageFix extends JavaPlugin {
         reloadConfig();
         setupAndReadConfig();
 
-        getLogger().info("FakeMessageFix reloaded. Logging status: " + getLoggingStatusString());
+        getLogger().info("FakeMessageFix reloaded. " + getLoggingStatusString());
         if (!(sender instanceof ConsoleCommandSender)) {
-            sender.sendMessage("FakeMessageFix reloaded. Logging status: " + getLoggingStatusString());
+            sender.sendMessage("FakeMessageFix reloaded. " + getLoggingStatusString());
         }
         return true;
     }
