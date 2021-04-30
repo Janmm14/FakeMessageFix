@@ -94,7 +94,7 @@ public final class FakeMessageFix extends JavaPlugin {
         getConfig().addDefault("log.unique", false);
         getConfig().addDefault("log.extraFile", false);
         getConfig().addDefault("hideKickInConsoleButKickMessageIsMotd", false);
-        log = getConfig().getBoolean("log");
+        log = getConfig().getBoolean("log.enabled");
         logDetailed = getConfig().getBoolean("log.detailed");
         logUnique = getConfig().getBoolean("log.unique");
         logFile = getConfig().getBoolean("log.extraFile");
