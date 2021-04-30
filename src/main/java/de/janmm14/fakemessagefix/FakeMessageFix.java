@@ -42,7 +42,7 @@ public final class FakeMessageFix extends JavaPlugin {
     private boolean logDetailed = false;
     private boolean logUnique = true;
     private boolean logFile = true;
-    private boolean hideKickInConsoleButKickMessageIsMotd = false;
+    private boolean rewriteLoginAttemptsToStatusRequest = false;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final Cache<String, Boolean> uniqueCache = CacheBuilder.newBuilder()
         .expireAfterWrite(6, TimeUnit.HOURS)
@@ -93,12 +93,12 @@ public final class FakeMessageFix extends JavaPlugin {
         getConfig().addDefault("log.detailed", false);
         getConfig().addDefault("log.unique", false);
         getConfig().addDefault("log.extraFile", false);
-        getConfig().addDefault("hideKickInConsoleButKickMessageIsMotd", false);
+        getConfig().addDefault("hideKickInConsoleButKickMessageIsMotdOrException", false);
         log = getConfig().getBoolean("log.enabled");
         logDetailed = getConfig().getBoolean("log.detailed");
         logUnique = getConfig().getBoolean("log.unique");
         logFile = getConfig().getBoolean("log.extraFile");
-        hideKickInConsoleButKickMessageIsMotd = getConfig().getBoolean("hideKickInConsoleButKickMessageIsMotd");
+        rewriteLoginAttemptsToStatusRequest = getConfig().getBoolean("hideKickInConsoleButKickMessageIsMotdOrException");
     }
 
     @Override
@@ -207,7 +207,7 @@ public final class FakeMessageFix extends JavaPlugin {
 
     private void log(String message) {
         if (logFile) {
-            message = dateFormat.format(new Date()) + ": " + message;
+            message = '[' + dateFormat.format(new Date()) + "]: " + message;
             try {
                 Files.write(logFilePath, Collections.singletonList(message), StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
@@ -280,7 +280,7 @@ public final class FakeMessageFix extends JavaPlugin {
             if (packet.getNextState() != PacketType.Protocol.LOGIN) {
                 return;
             }
-            if (hideKickInConsoleButKickMessageIsMotd) {
+            if (rewriteLoginAttemptsToStatusRequest) {
                 packet.setNextState(PacketType.Protocol.STATUS);
             }
             String serverAddressHostnameOrIp = packet.getServerAddressHostnameOrIp();
